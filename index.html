@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Domain Recon | Cyber Intelligence Terminal</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- GSAP for Animations -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Axios -->
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #020617;
+            color: #e2e8f0;
+            overflow-x: hidden;
+        }
+        .glass {
+            background: rgba(15, 23, 42, 0.8);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(30, 41, 59, 0.5);
+        }
+        .glow-blue {
+            box-shadow: 0 0 20px rgba(59, 130, 246, 0.2);
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: rgba(15, 23, 42, 0.5);
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: rgba(59, 130, 246, 0.3);
+            border-radius: 10px;
+        }
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .tab-active {
+            color: #60a5fa;
+            border-bottom: 2px solid #3b82f6;
+        }
+    </style>
+</head>
+<body class="min-h-screen font-sans">
+    <!-- Background Elements -->
+    <div class="fixed inset-0 pointer-events-none z-0">
+        <div class="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-blue-600/10 blur-[120px] rounded-full"></div>
+        <div class="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-indigo-600/10 blur-[120px] rounded-full"></div>
+        <div class="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:40px_40px]"></div>
+    </div>
+
+    <div class="relative z-10 max-w-7xl mx-auto px-6 py-12">
+        <!-- Header -->
+        <header class="mb-16 flex flex-col md:flex-row items-center justify-between gap-8 border-b border-slate-800/50 pb-8 backdrop-blur-sm">
+            <div class="flex items-center gap-5 group cursor-pointer" onclick="location.reload()">
+                <div class="p-3 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-2xl shadow-2xl border border-blue-400/20">
+                    <i data-lucide="shield-check" class="text-white w-9 h-9"></i>
+                </div>
+                <div>
+                    <h1 class="text-4xl font-black tracking-tighter text-white flex items-center gap-2 mb-1">
+                        Domain <span class="bg-gradient-to-r from-blue-400 to-indigo-400 bg-clip-text text-transparent">Recon</span>
+                    </h1>
+                    <p class="text-slate-500 text-xs font-bold uppercase tracking-[0.3em] flex items-center gap-2">
+                        <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+                        Cyber Intelligence Terminal
+                    </p>
+                </div>
+            </div>
+            
+            <div class="flex items-center gap-6">
+                <div class="hidden sm:flex items-center gap-6 text-[11px] font-black uppercase tracking-widest text-slate-500 border-r border-slate-800 pr-8">
+                    <span class="flex items-center gap-2 hover:text-blue-400 transition-colors cursor-help group">
+                        <i data-lucide="shield" class="w-3.5 h-3.5"></i> OSINT_PROTOCOL
+                    </span>
+                    <span class="flex items-center gap-2 hover:text-indigo-400 transition-colors cursor-help group">
+                        <i data-lucide="lock" class="w-3.5 h-3.5"></i> SECURE_ENCRYPTION
+                    </span>
+                </div>
+                <button onclick="location.reload()" class="text-[11px] font-black uppercase tracking-widest px-5 py-2.5 bg-slate-900/50 border border-slate-700 rounded-xl text-slate-300 hover:border-blue-500/50 hover:text-white transition-all backdrop-blur-md">
+                    Start New Analysis
+                </button>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="space-y-12">
+            <!-- Search Bar -->
+            <div id="search-section" class="relative max-w-3xl mx-auto group">
+                <div class="absolute inset-0 bg-blue-500/20 blur-[40px] rounded-3xl opacity-0 group-hover:opacity-40 transition-opacity duration-700"></div>
+                <div class="bg-slate-900/80 border border-slate-800 p-8 rounded-3xl shadow-2xl backdrop-blur-xl relative z-10">
+                    <form id="recon-form" class="flex flex-col sm:flex-row gap-5">
+                        <div class="relative flex-1 group/input">
+                            <div class="absolute inset-y-0 left-5 flex items-center pointer-events-none">
+                                <i data-lucide="search" class="text-slate-500 group-focus-within/input:text-blue-400 transition-colors w-5 h-5"></i>
+                            </div>
+                            <input
+                                type="text"
+                                id="domain-input"
+                                placeholder="Enter target domain (e.g. google.com)"
+                                required
+                                class="w-full bg-slate-950 border border-slate-800 rounded-2xl py-4 pl-14 pr-5 focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all outline-none text-white font-medium placeholder:text-slate-600 shadow-inner"
+                            >
+                        </div>
+                        <button
+                            type="submit"
+                            id="submit-btn"
+                            class="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white px-10 py-4 rounded-2xl font-black uppercase tracking-widest transition-all shadow-xl shadow-blue-600/20 flex items-center justify-center gap-3 min-w-[200px]"
+                        >
+                            <span>Analyze</span>
+                            <div class="w-1.5 h-1.5 rounded-full bg-white animate-pulse"></div>
+                        </button>
+                    </form>
+                    <div id="error-message" class="hidden mt-6 p-4 bg-red-500/10 border border-red-500/20 rounded-xl flex items-center gap-3 text-red-400 text-sm font-medium">
+                        <i data-lucide="alert-triangle" class="w-[18px] h-[18px]"></i> 
+                        <span id="error-text"></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Landing Features -->
+            <div id="landing-features" class="grid grid-cols-1 md:grid-cols-3 gap-8 pt-10">
+                <div class="feature-card bg-slate-900/40 border border-slate-800/50 p-10 rounded-[2.5rem] flex flex-col items-center text-center space-y-6 backdrop-blur-sm group hover:border-slate-700 transition-all duration-500">
+                    <div class="p-5 rounded-3xl bg-blue-500/10 text-blue-400 group-hover:scale-110 transition-transform duration-500">
+                        <i data-lucide="mail" class="w-8 h-8"></i>
+                    </div>
+                    <div class="space-y-3">
+                        <h3 class="text-xl font-bold text-slate-100">Email Exposure</h3>
+                        <p class="text-sm text-slate-500 leading-relaxed font-medium">Identify publicly known email addresses and historical breach associations.</p>
+                    </div>
+                </div>
+                <div class="feature-card bg-slate-900/40 border border-slate-800/50 p-10 rounded-[2.5rem] flex flex-col items-center text-center space-y-6 backdrop-blur-sm group hover:border-slate-700 transition-all duration-500">
+                    <div class="p-5 rounded-3xl bg-indigo-500/10 text-indigo-400 group-hover:scale-110 transition-transform duration-500">
+                        <i data-lucide="server" class="w-8 h-8"></i>
+                    </div>
+                    <div class="space-y-3">
+                        <h3 class="text-xl font-bold text-slate-100">Infrastructure</h3>
+                        <p class="text-sm text-slate-500 leading-relaxed font-medium">Complete subdomain mapping, IP resolution, and port visibility detection.</p>
+                    </div>
+                </div>
+                <div class="feature-card bg-slate-900/40 border border-slate-800/50 p-10 rounded-[2.5rem] flex flex-col items-center text-center space-y-6 backdrop-blur-sm group hover:border-slate-700 transition-all duration-500">
+                    <div class="p-5 rounded-3xl bg-purple-500/10 text-purple-400 group-hover:scale-110 transition-transform duration-500">
+                        <i data-lucide="bar-chart-3" class="w-8 h-8"></i>
+                    </div>
+                    <div class="space-y-3">
+                        <h3 class="text-xl font-bold text-slate-100">Risk Scoring</h3>
+                        <p class="text-sm text-slate-500 leading-relaxed font-medium">Weighted security posture score generated from multi-vector OSINT analysis.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Loading State -->
+            <div id="loading-state" class="hidden flex flex-col items-center justify-center py-24 space-y-12">
+                <div class="relative w-32 h-32">
+                    <div class="w-full h-full border-[6px] border-blue-500/10 border-t-blue-500 rounded-full shadow-[0_0_30px_rgba(59,130,246,0.2)] animate-spin"></div>
+                    <div class="absolute inset-0 flex items-center justify-center bg-slate-950/50 rounded-full backdrop-blur-sm">
+                        <span id="progress-percent" class="text-2xl font-black text-blue-400 tabular-nums">0%</span>
+                    </div>
+                </div>
+                
+                <div class="text-center w-full max-w-lg space-y-8">
+                    <div class="space-y-3">
+                        <h3 class="text-2xl font-black text-white tracking-tight animate-pulse">Scanning Public Vectors</h3>
+                        <div id="terminal-logs" class="bg-slate-950/80 border border-slate-800 p-6 rounded-2xl font-mono text-[11px] text-blue-400/80 text-left space-y-2 shadow-inner h-40 overflow-hidden relative">
+                            <div class="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-slate-950/80 pointer-events-none"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="space-y-4">
+                        <div class="h-2 w-full bg-slate-900 rounded-full overflow-hidden border border-slate-800 p-0.5">
+                            <div id="progress-bar" class="h-full bg-gradient-to-r from-blue-600 via-indigo-500 to-blue-400 rounded-full shadow-[0_0_15px_rgba(59,130,246,0.6)] w-0 transition-all duration-300"></div>
+                        </div>
+                        <div class="flex justify-between text-[10px] font-black uppercase tracking-widest px-1 text-slate-600">
+                            <span id="step-dns">DNS_CHECK</span>
+                            <span id="step-breach">BREACH_INTEL</span>
+                            <span id="step-ip">IP_RESOLVE</span>
+                            <span id="step-leak">LEAK_SCAN</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Results Section -->
+            <div id="results-section" class="hidden space-y-10 pt-4">
+                <!-- Summary Banner -->
+                <div id="summary-banner" class="bg-slate-900/60 border border-slate-800 p-8 rounded-[2rem] flex flex-col md:flex-row items-center justify-between gap-10 shadow-2xl backdrop-blur-xl relative overflow-hidden group">
+                    <div class="flex items-center gap-6 relative z-10">
+                        <div class="w-20 h-20 bg-blue-600/10 rounded-3xl flex items-center justify-center border border-blue-500/20 shadow-inner">
+                            <i data-lucide="globe" class="text-blue-400 w-10 h-10"></i>
+                        </div>
+                        <div>
+                            <h2 id="result-domain" class="text-3xl font-black text-white tracking-tighter mb-2"></h2>
+                            <div class="flex flex-wrap items-center gap-4">
+                                <span id="result-ip" class="text-xs font-mono text-blue-400 bg-blue-400/10 px-3 py-1 rounded-full border border-blue-400/20 shadow-sm"></span>
+                                <span id="result-org" class="text-[10px] text-slate-500 uppercase tracking-[0.2em] font-black flex items-center gap-2">
+                                    <i data-lucide="server" class="w-3 h-3 text-indigo-500"></i>
+                                    <span id="org-name"></span>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="stats-grid" class="flex items-center gap-8 relative z-10">
+                        <!-- Stats will be injected here -->
+                    </div>
+                </div>
+
+                <!-- Navigation Tabs -->
+                <div class="flex border-b border-slate-800/50 gap-10 overflow-x-auto no-scrollbar px-2">
+                    <button onclick="switchTab('overview')" id="tab-overview" class="tab-btn flex items-center gap-3 pb-5 text-[11px] font-black tracking-[0.2em] transition-all relative group whitespace-nowrap tab-active">
+                        <i data-lucide="bar-chart-3" class="w-4 h-4"></i> OVERVIEW
+                    </button>
+                    <button onclick="switchTab('emails')" id="tab-emails" class="tab-btn flex items-center gap-3 pb-5 text-[11px] font-black tracking-[0.2em] transition-all relative group whitespace-nowrap text-slate-500 hover:text-slate-300">
+                        <i data-lucide="mail" class="w-4 h-4"></i> EMAIL_SECURITY
+                    </button>
+                    <button onclick="switchTab('infrastructure')" id="tab-infrastructure" class="tab-btn flex items-center gap-3 pb-5 text-[11px] font-black tracking-[0.2em] transition-all relative group whitespace-nowrap text-slate-500 hover:text-slate-300">
+                        <i data-lucide="server" class="w-4 h-4"></i> INFRASTRUCTURE
+                    </button>
+                    <button onclick="switchTab('leaks')" id="tab-leaks" class="tab-btn flex items-center gap-3 pb-5 text-[11px] font-black tracking-[0.2em] transition-all relative group whitespace-nowrap text-slate-500 hover:text-slate-300">
+                        <i data-lucide="external-link" class="w-4 h-4"></i> LEAKS_PASTES
+                    </button>
+                </div>
+
+                <!-- Tab Content -->
+                <div id="tab-content" class="grid grid-cols-1 lg:grid-cols-12 gap-10">
+                    <div id="main-panel" class="lg:col-span-8 space-y-10">
+                        <!-- Dynamic content injected here -->
+                    </div>
+                    <div id="sidebar-panel" class="lg:col-span-4 space-y-6">
+                        <!-- Risk panel injected here -->
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Footer -->
+        <footer class="max-w-7xl mx-auto pt-10 pb-6 border-t border-slate-800 text-center space-y-4">
+            <div class="flex flex-col md:flex-row items-center justify-between gap-4">
+                <div class="text-slate-500 text-xs">
+                    Powered by Public OSINT Sources • Generated in <span id="execution-time">0</span>s
+                </div>
+                <div class="flex items-center gap-4 text-xs font-medium text-slate-400">
+                    <a href="#" class="hover:text-white transition-colors">Documentation</a>
+                    <a href="#" class="hover:text-white transition-colors">API Status</a>
+                    <a href="#" class="hover:text-white transition-colors">Privacy Policy</a>
+                </div>
+            </div>
+            <div class="bg-slate-900/50 border border-slate-800 p-4 rounded-xl text-[10px] text-slate-500 text-left leading-relaxed">
+                <strong class="text-slate-400 block mb-1 uppercase tracking-wider">Ethical OSINT Disclaimer:</strong>
+                This tool is designed for security awareness and educational purposes only. It uses publicly available data from sources like crt.sh, DNS records, and known data breach lists. It does not perform unauthorized scans, attempt to access sensitive credentials, or violate privacy boundaries.
+            </div>
+        </footer>
+    </div>
+
+    <!-- Script -->
+    <script src="/static/js/app.js"></script>
+</body>
+</html>

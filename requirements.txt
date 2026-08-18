@@ -1,0 +1,9 @@
+fastapi
+uvicorn
+requests
+dnspython
+pydantic
+pydantic-settings
+python-dotenv
+aiohttp
+httpx
